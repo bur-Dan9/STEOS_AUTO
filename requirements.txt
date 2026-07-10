@@ -1,3 +1,2 @@
 pyTelegramBotAPI
-pydub
-Flask
+pydub==0.25.1
