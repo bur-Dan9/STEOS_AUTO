@@ -1,15 +1,30 @@
 import os
 import telebot
+import socket
+import threading
 from telebot import types
 from pydub import AudioSegment
 from pydub.silence import split_on_silence
 
-# Вставь свой токен внутри кавычек
-TOKEN = '8849250357:AAH1cs0AUK9MtqB9vr4bk3dQqHLYXuJGr48'
+# Получаем токен из настроек окружения Render (безопасный способ)
+TOKEN = os.environ.get('TOKEN')
 bot = telebot.TeleBot(TOKEN)
 
 WORK_DIR = "bot_work"
 os.makedirs(WORK_DIR, exist_ok=True)
+
+# Заглушка для порта Render, чтобы сервис не отключали
+def start_dummy_server():
+    port = int(os.environ.get('PORT', 10000))
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind(('0.0.0.0', port))
+    s.listen(5)
+    print(f"Сервер-заглушка запущен на порту {port}")
+    while True:
+        conn, addr = s.accept()
+        conn.close()
+
+threading.Thread(target=start_dummy_server, daemon=True).start()
 
 def get_keyboard():
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
@@ -95,7 +110,6 @@ def handle_docs_audio(message):
                 
             bot.send_message(message.chat.id, "Нарезка завершена! Перешли эти куски в STEOS.")
         else:
-            # ИСПРАВЛЕНО ЗДЕСЬ: Сохраняем в MP3 вместо OGG
             part_path = os.path.join(WORK_DIR, f"{message.message_id}.mp3")
             audio.export(part_path, format="mp3")
             bot.send_message(message.chat.id, f"✅ Кусок сохранён в память.")
@@ -106,19 +120,5 @@ def handle_docs_audio(message):
         print(f"Ошибка: {e}")
         bot.send_message(message.chat.id, "Файл не удалось прочитать.")
 
-print("Бот готов к работе (mp3 версия)!")
-# Создаем мини-веб-сервер для Render, чтобы он не закрыл бота
-from flask import Flask
-from threading import Thread
-app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return "Бот работает!"
-
-def run():
-    app.run(host='0.0.0.0', port=10000)
-
-t = Thread(target=run)
-t.start()
+print("Бот готов к работе!")
 bot.polling(none_stop=True)
