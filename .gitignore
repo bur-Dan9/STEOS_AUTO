@@ -1,0 +1,7 @@
+bot_work/
+parts/
+result/
+input/
+temp_*.mp3
+temp_*.ogg
+*.pyc
