@@ -107,4 +107,18 @@ def handle_docs_audio(message):
         bot.send_message(message.chat.id, "Файл не удалось прочитать.")
 
 print("Бот готов к работе (mp3 версия)!")
+# Создаем мини-веб-сервер для Render, чтобы он не закрыл бота
+from flask import Flask
+from threading import Thread
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Бот работает!"
+
+def run():
+    app.run(host='0.0.0.0', port=10000)
+
+t = Thread(target=run)
+t.start()
 bot.polling(none_stop=True)
